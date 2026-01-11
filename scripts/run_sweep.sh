@@ -15,6 +15,18 @@
 
 set -e
 
+# Get the directory where this script is located
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
+
+cd "$PROJECT_ROOT"
+
+# Activate virtual environment if it exists
+if [ -d ".venv" ]; then
+    echo "Activating virtual environment..."
+    source .venv/bin/activate
+fi
+
 # Parse args
 QUICK=false
 for arg in "$@"; do
@@ -27,14 +39,18 @@ done
 if [ "$QUICK" = true ]; then
     SEEDS=1
     MAX_STEPS=100
-    echo "Quick mode: 1 seed, 100 steps"
+    BATCH_SIZE=8
+    SUBSET_SIZE=10000
+    echo "Quick mode: 1 seed, 100 steps, batch_size=8, subset=10K"
 else
     SEEDS=3
     MAX_STEPS=1000
+    BATCH_SIZE=32
+    SUBSET_SIZE=100000
 fi
 
-# Dtype configs to test
-DTYPE_CONFIGS="fp32_baseline amp_fp16 amp_bf16 bf16_pure fp16_naive amp_bf16_8bit_adam"
+# Dtype configs to test (matches BENCHMARK_SPEC.md)
+DTYPE_CONFIGS="fp32_true amp_fp16 amp_bf16 bf16_pure fp16_naive amp_bf16_8bit_adam"
 
 echo "=========================================="
 echo "Dtype Benchmark - Full Sweep"
@@ -73,6 +89,8 @@ for scenario in "${SCENARIOS[@]}"; do
             --dtype_config "$dtype_config" \
             --seeds "$SEEDS" \
             --max_steps "$MAX_STEPS" \
+            --batch_size "$BATCH_SIZE" \
+            --subset_size "$SUBSET_SIZE" \
             --output_dir "results/scenario_${scenario_id}"
     done
 done

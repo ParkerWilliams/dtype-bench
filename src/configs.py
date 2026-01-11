@@ -61,8 +61,8 @@ def _str_to_dtype(s: str) -> torch.dtype:
 # =============================================================================
 
 CORE_CONFIGS = {
-    "fp32_baseline": DtypeConfig(
-        name="fp32_baseline",
+    "fp32_true": DtypeConfig(
+        name="fp32_true",
         model_dtype="float32",
         use_amp=False,
         matmul_precision="highest",
