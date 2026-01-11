@@ -6,7 +6,7 @@
 set -e
 
 echo "=========================================="
-echo "Dtype Benchmarking Setup"
+echo "Dtype Benchmark Setup"
 echo "=========================================="
 
 # System packages
@@ -16,17 +16,7 @@ sudo apt-get install -y -qq git wget
 
 # Python packages
 echo "Installing Python packages..."
-pip install --quiet \
-    torch \
-    transformers \
-    datasets \
-    tiktoken \
-    bitsandbytes \
-    matplotlib \
-    pandas \
-    seaborn \
-    tqdm \
-    scipy
+pip install -r requirements.txt
 
 # Verify GPU
 echo ""
@@ -44,9 +34,8 @@ echo "Setup complete!"
 echo "=========================================="
 echo ""
 echo "Next steps:"
-echo "  1. Prepare data:"
-echo "     python experiments/lm/prepare_data.py"
-echo "     python experiments/classification/prepare_data.py"
+echo "  Run the benchmark sweep:"
+echo "    ./scripts/run_sweep.sh"
 echo ""
-echo "  2. Run experiments:"
-echo "     ./scripts/run_all.sh"
+echo "  Or run a single scenario:"
+echo "    python -m src.benchmark --model_arch gpt2 --task clm --dtype_config amp_bf16"

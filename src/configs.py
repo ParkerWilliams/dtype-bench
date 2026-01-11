@@ -1,9 +1,10 @@
-# Dtype Configurations
-#
-# Shared configuration definitions used by all experiments.
-# Each experiment may add task-specific configs.
+"""
+Dtype Configurations
 
-from dataclasses import dataclass, field
+Shared configuration definitions for all benchmark scenarios.
+"""
+
+from dataclasses import dataclass
 from typing import Optional
 import torch
 
@@ -12,32 +13,32 @@ import torch
 class DtypeConfig:
     """Configuration for a dtype experiment."""
     name: str
-    
+
     # Model weight storage
     model_dtype: str = "float32"
-    
+
     # Automatic Mixed Precision
     use_amp: bool = False
     amp_dtype: str = "float16"
-    
+
     # Optimizer
     use_8bit_adam: bool = False
-    
+
     # Classification head (optional, for encoder models)
     head_dtype: Optional[str] = None
-    
+
     # torch.compile
     use_compile: bool = True
-    
+
     # torch.set_float32_matmul_precision
     matmul_precision: str = "highest"  # highest, high, medium
-    
+
     def get_model_dtype(self) -> torch.dtype:
         return _str_to_dtype(self.model_dtype)
-    
+
     def get_amp_dtype(self) -> torch.dtype:
         return _str_to_dtype(self.amp_dtype)
-    
+
     def get_head_dtype(self) -> Optional[torch.dtype]:
         if self.head_dtype is None:
             return None
@@ -66,21 +67,21 @@ CORE_CONFIGS = {
         use_amp=False,
         matmul_precision="highest",
     ),
-    
+
     "amp_fp16": DtypeConfig(
         name="amp_fp16",
         model_dtype="float32",
         use_amp=True,
         amp_dtype="float16",
     ),
-    
+
     "amp_bf16": DtypeConfig(
         name="amp_bf16",
         model_dtype="float32",
         use_amp=True,
         amp_dtype="bfloat16",
     ),
-    
+
     "bf16_pure": DtypeConfig(
         name="bf16_pure",
         model_dtype="bfloat16",
@@ -100,13 +101,13 @@ EXTENDED_CONFIGS = {
         model_dtype="float16",
         use_amp=False,
     ),
-    
+
     "bf16_naive": DtypeConfig(
         name="bf16_naive",
         model_dtype="bfloat16",
         use_amp=False,
     ),
-    
+
     "amp_fp16_8bit_adam": DtypeConfig(
         name="amp_fp16_8bit_adam",
         model_dtype="float32",
@@ -114,7 +115,7 @@ EXTENDED_CONFIGS = {
         amp_dtype="float16",
         use_8bit_adam=True,
     ),
-    
+
     "amp_bf16_8bit_adam": DtypeConfig(
         name="amp_bf16_8bit_adam",
         model_dtype="float32",
@@ -122,14 +123,14 @@ EXTENDED_CONFIGS = {
         amp_dtype="bfloat16",
         use_8bit_adam=True,
     ),
-    
+
     "bf16_no_compile": DtypeConfig(
         name="bf16_no_compile",
         model_dtype="bfloat16",
         use_amp=False,
         use_compile=False,
     ),
-    
+
     "fp32_tf32_matmul": DtypeConfig(
         name="fp32_tf32_matmul",
         model_dtype="float32",
@@ -151,7 +152,7 @@ CLASSIFICATION_CONFIGS = {
         amp_dtype="bfloat16",
         head_dtype="float32",
     ),
-    
+
     "bf16_body_fp32_head": DtypeConfig(
         name="bf16_body_fp32_head",
         model_dtype="bfloat16",

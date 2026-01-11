@@ -1,39 +1,20 @@
-# Data
+# Data & Models
 data/
+checkpoints/
 *.bin
+*.pth
+*.pt
 
 # Results
 results/
+*.jsonl
+*.csv
+*.png
 
-# Python
+# System & Python
 __pycache__/
 *.py[cod]
-*$py.class
-.Python
-*.so
-.eggs/
-*.egg-info/
-*.egg
-
-# Environments
 .env
 .venv
-env/
 venv/
-
-# IDE
-.idea/
-.vscode/
-*.swp
-*.swo
-
-# OS
 .DS_Store
-Thumbs.db
-
-# Jupyter
-.ipynb_checkpoints/
-
-# Logs
-*.log
-logs/
