@@ -6,6 +6,7 @@
 #   ./scripts/setup.sh --no-venv # Skip venv creation (for containers)
 
 set -e
+export HF_HOME="/workspace/hf_cache"
 
 # Parse args
 USE_VENV=true
@@ -48,7 +49,7 @@ fi
 # Install Python packages
 echo ""
 echo "Installing Python packages..."
-pip install -r requirements.txt
+pip install --ignore-installed -r requirements.txt
 
 # Verify GPU
 echo ""

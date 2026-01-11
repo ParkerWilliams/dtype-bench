@@ -174,7 +174,7 @@ def run_benchmark(
 
         # Setup AMP
         use_scaler = config.use_amp and config.amp_dtype == "float16"
-        scaler = torch.amp.GradScaler("cuda", enabled=use_scaler)
+        scaler = torch.cuda.amp.GradScaler(enabled=use_scaler)
         amp_dtype = config.get_amp_dtype() if config.use_amp else None
         print(f"AMP: {'enabled (' + str(amp_dtype) + ')' if config.use_amp else 'disabled'}")
         print(f"GradScaler: {'enabled' if use_scaler else 'disabled'}")
@@ -231,7 +231,7 @@ def run_benchmark(
             optimizer.zero_grad(set_to_none=True)
 
             # Forward pass
-            with torch.amp.autocast("cuda", enabled=config.use_amp, dtype=amp_dtype):
+            with torch.autocast(device_type="cuda", enabled=config.use_amp, dtype=amp_dtype):
                 if task == "clm":
                     logits, loss = model(batch["idx"], batch["targets"])
                     max_logit = logits.abs().max().item()
