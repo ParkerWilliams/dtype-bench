@@ -161,7 +161,7 @@ def run_benchmark(
         # Optional torch.compile
         if config.use_compile:
             print("Compiling model with torch.compile...")
-            model = torch.compile(model)
+            model = torch.compile(model, mode="default")
 
         # Setup optimizer
         if config.use_8bit_adam:
