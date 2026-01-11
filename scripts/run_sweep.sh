@@ -45,7 +45,7 @@ if [ "$QUICK" = true ]; then
 else
     SEEDS=3
     MAX_STEPS=1000
-    BATCH_SIZE=32
+    BATCH_SIZE=24
     SUBSET_SIZE=100000
 fi
 
