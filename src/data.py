@@ -250,37 +250,53 @@ class EURLexDataset(Dataset):
 
     Loads from HuggingFace datasets and returns raw text + label indices.
     Use with EURLexCollator for batching.
+
+    Dataset: NLP-AUEB/eurlex (EURLEX57K)
+    Labels: EUROVOC concept IDs (strings converted to integers)
     """
 
     def __init__(self, split: str = "train", max_examples: Optional[int] = None):
         """
         Args:
-            split: Dataset split ("train", "validation", "test")
+            split: Dataset split ("train", "development", "test")
+                   Note: Uses "development" not "validation"
             max_examples: Optional limit on number of examples
         """
         from datasets import load_dataset
 
-        print(f"Loading EUR-Lex {split} split...")
+        # Map common split names
+        split_map = {"validation": "development", "dev": "development"}
+        actual_split = split_map.get(split, split)
 
-        # Load dataset
-        # EUR-Lex 57K variant has cleaner labels
-        ds = load_dataset("eurlex", "eurlex57k", split=split, trust_remote_code=True)
+        print(f"Loading EUR-Lex {actual_split} split...")
+
+        # Load dataset from NLP-AUEB/eurlex (EURLEX57K)
+        ds = load_dataset("NLP-AUEB/eurlex", split=actual_split, trust_remote_code=True)
 
         if max_examples:
             ds = ds.select(range(min(max_examples, len(ds))))
 
+        # Build label vocabulary (eurovoc_concepts are strings like "192", "2356")
+        # We need to map them to contiguous integers
+        print("Building label vocabulary...")
+        all_label_strs = set()
+        for ex in ds:
+            all_label_strs.update(ex["eurovoc_concepts"])
+
+        # Sort for reproducibility and create mapping
+        sorted_labels = sorted(all_label_strs, key=lambda x: int(x) if x.isdigit() else x)
+        self.label_to_id = {label: idx for idx, label in enumerate(sorted_labels)}
+        self.id_to_label = {idx: label for label, idx in self.label_to_id.items()}
+        self.num_labels = len(self.label_to_id)
+
+        # Process examples
         self.examples = []
-        for ex in tqdm(ds, desc=f"Processing {split}"):
+        for ex in tqdm(ds, desc=f"Processing {actual_split}"):
+            label_ids = [self.label_to_id[lbl] for lbl in ex["eurovoc_concepts"] if lbl in self.label_to_id]
             self.examples.append({
                 "text": ex["text"],
-                "label_ids": ex["labels"]  # List of label indices
+                "label_ids": label_ids
             })
-
-        # Get number of unique labels
-        all_labels = set()
-        for ex in self.examples:
-            all_labels.update(ex["label_ids"])
-        self.num_labels = max(all_labels) + 1 if all_labels else 4271
 
         print(f"Loaded {len(self.examples):,} examples with {self.num_labels} labels")
 
@@ -388,7 +404,7 @@ def create_classification_dataloader(
     task: str,  # "multi_cls" or "single_cls"
     batch_size: int = 8,
     max_length: int = 512,
-    num_labels: int = 4271,
+    num_labels: Optional[int] = None,  # If None, uses dataset's num_labels
     max_examples: Optional[int] = None,
     num_workers: int = 0,
     tokenizer_name: str = "roberta-base",
@@ -397,11 +413,11 @@ def create_classification_dataloader(
     Create classification dataloader with appropriate collator.
 
     Args:
-        split: Dataset split
+        split: Dataset split ("train", "development", "test")
         task: "multi_cls" or "single_cls"
         batch_size: Batch size
         max_length: Max sequence length
-        num_labels: Number of classification labels
+        num_labels: Number of classification labels (None = use dataset's count)
         max_examples: Optional limit on examples
         num_workers: DataLoader workers
         tokenizer_name: Tokenizer to use
@@ -414,13 +430,16 @@ def create_classification_dataloader(
     # Load dataset
     dataset = EURLexDataset(split=split, max_examples=max_examples)
 
+    # Use dataset's num_labels if not specified
+    actual_num_labels = num_labels if num_labels is not None else dataset.num_labels
+
     # Setup collator
     tokenizer = AutoTokenizer.from_pretrained(tokenizer_name)
     mode = "multi" if task == "multi_cls" else "single"
     collator = EURLexCollator(
         tokenizer=tokenizer,
         max_length=max_length,
-        num_labels=num_labels,
+        num_labels=actual_num_labels,
         mode=mode
     )
 
