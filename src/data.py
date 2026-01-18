@@ -284,7 +284,14 @@ class EURLexDataset(Dataset):
             all_label_strs.update(ex["eurovoc_concepts"])
 
         # Sort for reproducibility and create mapping
-        sorted_labels = sorted(all_label_strs, key=lambda x: int(x) if x.isdigit() else x)
+        # Use tuple key to avoid comparing int vs str (Python 3 TypeError)
+        def label_sort_key(x):
+            try:
+                return (0, int(x))  # Numeric labels first, sorted by value
+            except ValueError:
+                return (1, x)  # Non-numeric labels after, sorted alphabetically
+
+        sorted_labels = sorted(all_label_strs, key=label_sort_key)
         self.label_to_id = {label: idx for idx, label in enumerate(sorted_labels)}
         self.id_to_label = {idx: label for label, idx in self.label_to_id.items()}
         self.num_labels = len(self.label_to_id)
