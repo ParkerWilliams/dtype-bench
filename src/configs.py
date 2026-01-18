@@ -21,6 +21,10 @@ class DtypeConfig:
     use_amp: bool = False
     amp_dtype: str = "float16"
 
+    # Static loss scaling (for fp16 without AMP)
+    # When set, multiplies loss by this factor before backward, then unscales gradients
+    static_loss_scale: Optional[float] = None
+
     # Optimizer
     use_8bit_adam: bool = False
 
@@ -100,6 +104,7 @@ EXTENDED_CONFIGS = {
         name="fp16_naive",
         model_dtype="float16",
         use_amp=False,
+        static_loss_scale=1024.0,  # Fixed scale to prevent gradient underflow
     ),
 
     "bf16_naive": DtypeConfig(

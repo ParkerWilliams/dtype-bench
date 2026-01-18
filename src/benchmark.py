@@ -176,8 +176,11 @@ def run_benchmark(
         use_scaler = config.use_amp and config.amp_dtype == "float16"
         scaler = torch.cuda.amp.GradScaler(enabled=use_scaler)
         amp_dtype = config.get_amp_dtype() if config.use_amp else None
+        static_loss_scale = config.static_loss_scale
         print(f"AMP: {'enabled (' + str(amp_dtype) + ')' if config.use_amp else 'disabled'}")
         print(f"GradScaler: {'enabled' if use_scaler else 'disabled'}")
+        if static_loss_scale is not None:
+            print(f"Static loss scale: {static_loss_scale}")
 
         # Load data
         print(f"Loading data (subset_size={subset_size})...")
@@ -250,6 +253,14 @@ def run_benchmark(
             if use_scaler:
                 scaler.scale(loss).backward()
                 scaler.unscale_(optimizer)
+            elif static_loss_scale is not None:
+                # Static loss scaling: scale loss, backward, then unscale grads
+                scaled_loss = loss * static_loss_scale
+                scaled_loss.backward()
+                # Unscale gradients manually
+                for p in model.parameters():
+                    if p.grad is not None:
+                        p.grad.data.div_(static_loss_scale)
             else:
                 loss.backward()
 
@@ -268,7 +279,12 @@ def run_benchmark(
 
             # Log metrics
             step_time_ms = (time.time() - step_start) * 1000
-            loss_scale = scaler.get_scale() if use_scaler else 1.0
+            if use_scaler:
+                loss_scale = scaler.get_scale()
+            elif static_loss_scale is not None:
+                loss_scale = static_loss_scale
+            else:
+                loss_scale = 1.0
 
             tracker.log_step(
                 step=step,

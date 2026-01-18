@@ -27,6 +27,12 @@ if [ -d ".venv" ]; then
     source .venv/bin/activate
 fi
 
+# Source environment variables if available
+if [ -f ".env.sh" ]; then
+    echo "Loading environment variables..."
+    source .env.sh
+fi
+
 # Parse args
 QUICK=false
 for arg in "$@"; do
